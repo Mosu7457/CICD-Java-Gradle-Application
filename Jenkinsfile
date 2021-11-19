@@ -1,5 +1,8 @@
 pipeline{
     agent any
+    environment{
+        VERSION = "${env.BUILD_ID}"
+    }
     stages{
         stage("sonar quality check"){
             agent{
@@ -21,6 +24,20 @@ pipeline{
                     }
                 }
             }
+        }
+        stage("docker build & docker push"){
+            steps{
+                script{
+                    withCredentials([string(credentialsId: 'docker_pass', variable: 'docker_pass')]) {
+                        sh '''
+                            docker build -t 54.252.210.68:8083/springapp:${VERSION} .
+                            docker login -u admin -p $docker_pass 54.252.210.68:8083
+                            docker push 54.252.210.68:8083/springapp:${VERSION}
+                            docker rmi 54.252.210.68:8083/springapp:${VERSION}
+                        '''
+                    }
+                }
+            }            
         }
     }
 }
